@@ -101,6 +101,43 @@ def get_interrogation_windows(frame, window_size):
             windows.append((window,x,y))
     return windows
 
+def subpixel_peak(result, max_loc):
+    x, y = max_loc
+
+    if x <= 0 or x >= result.shape[1] - 1:
+        return float(x), float(y)
+
+    if y <= 0 or y >= result.shape[0] - 1:
+        return float(x), float(y)
+
+    # X
+    left = result[y, x - 1]
+    center = result[y, x]
+    right = result[y, x + 1]
+
+    denominator_x = left - 2 * center + right
+
+    if denominator_x != 0:
+        offset_x = 0.5 * (left - right) / denominator_x
+    else:
+        offset_x = 0.0
+
+    # Y
+    up = result[y - 1, x]
+    down = result[y + 1, x]
+
+    denominator_y = up - 2 * center + down
+
+    if denominator_y != 0:
+        offset_y = 0.5 * (up - down) / denominator_y
+    else:
+        offset_y = 0.0
+
+    offset_x = np.clip(offset_x, -0.5, 0.5)
+    offset_y = np.clip(offset_y, -0.5, 0.5)
+
+    return x + offset_x, y + offset_y
+
 def estimate_displacement(windows1, processed2, window_size):
     displacements = []
     # go through all windows in second frame
@@ -136,8 +173,11 @@ def estimate_displacement(windows1, processed2, window_size):
         # and find max
         _, max_val, _, max_loc = cv2.minMaxLoc(result)
         # calculate displacements
-        dx = max_loc[0] - margin
-        dy = max_loc[1] - margin
+        subpixel_x, subpixel_y = subpixel_peak(result, max_loc)
+        dx = subpixel_x - margin
+        dy = subpixel_y - margin
+        # dx = max_loc[0] - margin
+        # dy = max_loc[1] - margin
 
         if max_val < CORRELATION_THRESHOLD:
             continue
