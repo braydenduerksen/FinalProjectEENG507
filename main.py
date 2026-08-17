@@ -7,23 +7,57 @@ import matplotlib.pyplot as plt
 # size of ls-piv window and denseness of optical flow
 WINDOW_SIZE = 32
 STEP = 16
-FILENAME = "RMC_D_RC_030_07072020_AC.mp4"
 
-# loop contstants
+# Site information
+SITES = {
+    "CCC": {
+        "filename": "CCC_D_RC_030_07082020_AC.mp4",
+        "width": 12.906,
+        "area": 24.062,
+        "discharge": 19.531
+    },
+
+    "RMC": {
+        "filename": "RMC_D_RC_030_07072020_AC.mp4",
+        "width": 10.799,
+        "area": 9.233,
+        "discharge": 1.740
+    },
+
+    "WMD": {
+        "filename": "WMD_D_RC_030_07062020_AC.mp4",
+        "width": 5.625,
+        "area": 4.545,
+        "discharge": 4.122
+    },
+
+    "ACR": {
+        "filename": "ACR_D_NN_090_05012019_FE.MOV",
+        "width": 99.2,
+        "area": 456.4,
+        "discharge": 405.0
+    }
+}
+
+# Choose which site to run
+SITE = "RMC"
+
+FILENAME = SITES[SITE]["filename"]
+MEAN_CHANNEL_WIDTH_M = SITES[SITE]["width"]
+CROSS_SECTION_AREA_M2 = SITES[SITE]["area"]
+MEASURED_DISCHARGE_M3S = SITES[SITE]["discharge"]
+
+
+# loop constants
 NUM_TRIALS = 200
 FRAME_SEPARATION = 3
 PAIR_STEP = 5
+
 
 # thresholds
 CORRELATION_THRESHOLD = 0.2
 MAX_DISPLACEMENT_PX = 16
 DISPLAY_VECTOR_SCALE = 8
-
-# LS-PIV specific constants from reports (CCC)
-MEAN_CHANNEL_WIDTH_M = 10.799
-CROSS_SECTION_AREA_M2 = 9.233
-#SURFACE_VELOCITY_COEFFICIENT = 0.85
-MEASURED_DISCHARGE_M3S = 1.740
 
 
 def load_video(video_name):
@@ -367,13 +401,12 @@ def plot_velocity_field(frame, displacements, fps, frame_separation, roi, title)
     plt.tight_layout()
     plt.show()
 
-def ls_piv():
+def ls_piv(roi):
     # main LS-PIV flow
 
     # start with loading video and getting ROI
     cap = load_video("./videos/" + FILENAME)
     fps = cap.get(cv2.CAP_PROP_FPS)
-    roi = select_roi(cap)
 
     all_displacements = []
     last_processed1 = None
@@ -458,13 +491,12 @@ def get_vectors(frame1, frame2, step=16):
 
     return vectors
 
-def optical_flow():
+def optical_flow(roi):
     # main optical flow pipeline
 
     # start with loading video and getting ROI
     cap = load_video("./videos/" + FILENAME)
     fps = cap.get(cv2.CAP_PROP_FPS)
-    roi = select_roi(cap)
 
     all_displacements = []
     last_processed1 = None
@@ -505,5 +537,13 @@ def optical_flow():
 
 
 if __name__ == "__main__":
-    ls_piv()
-    optical_flow()
+
+    cap = load_video("./videos/" + FILENAME)
+
+    roi = select_roi(cap)
+
+    cap.release()
+
+    ls_piv(roi)
+    optical_flow(roi)
+
